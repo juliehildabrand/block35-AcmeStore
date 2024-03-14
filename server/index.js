@@ -5,6 +5,8 @@ const {client, createTables, createUser, fetchUsers, createProduct, fetchProduct
 //bring in express
 const express = require('express');
 const app = express();
+//json parser middleware
+app.use(express.json());
 
 //establish CRUD functionality
 //GET users
@@ -37,6 +39,28 @@ app.get('/api/users/:id/favorites', async(req, res, next)=> {
   }
 });
 
+//POST a customer's favorite product
+app.post('/api/users/:id/favorites', async(req, res, next)=> {
+  try {
+    const favorite = await createFavorite({ user_id: req.params.userId, product_id: req.body.product_id});
+    res.status(201).send(favorite);
+  }
+  catch(error){
+    next(error);
+  }
+});
+
+//DELETE favorite
+app.delete('/api/users/:userId/favorites/:id', async(req, res, next)=> {
+  try {
+    await destroyFavorite({ user_id: req.params.userId, id: req.params.id});
+    res.sendStatus(204);
+  }
+  catch(error){
+    next(error);
+  }
+});
+
 //create init function
 const init = async()=> {
   console.log('connecting to our database');
@@ -65,6 +89,7 @@ const init = async()=> {
 
   await destroyFavorite(bartDuffs);
 
+  //refresh bart's favorites after the destroy function
   console.log(await fetchFavorites(bart.id));
 
   //add listening port
@@ -74,6 +99,8 @@ const init = async()=> {
     console.log(`curl localhost:${port}/api/users`);
     console.log(`curl localhost:${port}/api/products`);
     console.log(`curl localhost:${port}/api/users/${bart.id}/favorites`);
+    console.log(`curl -X POST localhost:${port}/api/users/${bart.id}/favorites -d '{"product_id":"${saxophone.id}"} -H "Content-Type:application/json"`);
+    console.log(`curl -X DELETE localhost:${port}/api/users/${bart.id}/favorites/${saxophone.id}`);
   });
 };
 
